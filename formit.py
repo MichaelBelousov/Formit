@@ -17,8 +17,9 @@ syntax:
 
 types:
 
-    num
     str
+    num
+    bool
     ipv4
     ipv6
     mac
@@ -39,11 +40,13 @@ NAMES?:
 
 """
 
-import ast
+# TODO: use the | syntax to delimit multiple type entries? Or have it so multiple python functions can point to the same input, with different input types!
+
 import sys
-#use psyco for performance?
-from pyparsing import *
-import validatorsplus as validators
+from secappsutils import validatorsplus as validators
+from pyparsing import *  #use psyco for performance?
+from functools import reduce
+from operator import or_
 # import argparse
 
 ParserElement.inlineLiteralsUsing(Suppress)
@@ -67,8 +70,6 @@ pname = Combine(Word(alphanums) + Optional(Word(alphanums+'_-')))
 pnumber = Combine(Word(nums) + Optional('.' + Word(nums)))
 pcomment = '#' + restOfLine()
 
-from functools import reduce
-from operator import or_
 ptype = reduce(or_, [CaselessKeyword(x) for x in 
     ('str', 'ipv4', 'cidr', 'mac', 'num', 'table', 'datetime', 'email')])
 # ptype = NoMatch() | 'str' | 'ipv4' | 'cidr' |\
@@ -132,24 +133,45 @@ pdirective = (
 pline = pparam | presult | pdirective
 pline.ignore(pcomment)
 
-noalert = 'noalert'
 
-class FormSpec(object): 
-    def __init__(self, params, results, **kwargs):
-        if noalert in kwargs:
-            pass
-        self.params = params
-        self.results = results
-        for p in params:
-            pass
-        for r in results:
-            pass
-    def tohtml(self):
-        return ''
+########## end parsing stuff #############
 
 # NOTE: seems more convenient, but didn't work very well
 # pdocstr = delimitedList(Optional(pline), Suppress(lineEnd))
 # pdocstr.setParseAction(FormSpec)
+
+def make_app(cls):
+    """a decorator that turns a class into an app"""
+
+    if not isinstance(cls, type):
+        raise TypeError('Only classes can be'
+                ' made into apps.')
+
+    # soon-to-be decorated wrapper class
+    class ClassWrapper(cls):
+        othercls = cls
+    # decoration is clearer, here
+    funcs = [f for f in dir(ClassWrapper) if callable(getattr(ClassWrapper, f))]
+    excludes = ('__class__',)
+    for e in excludes:
+        funcs.remove(e)
+    for name in funcs:
+        func = getattr(ClassWrapper, name)
+        print(func.__doc__)
+        def decorated(*args, **kwargs):
+            print('hello')
+            return func(*args, **kwargs)
+        setattr(ClassWrapper, name, decorated)
+
+    # @wraps might not necessarily work so...
+    ClassWrapper.__doc__ = cls.__doc__
+    ClassWrapper.__name__ = cls.__name__
+
+    return ClassWrapper
+
+def make_named_app(name):
+    # do something
+    return make_app
 
 def example(title, root):
     """
@@ -175,12 +197,6 @@ def get_formspec(obj):
 
 
 if __name__ == '__main__':
-    import secappsutils.generics as generics
-    get_formspec(generics.email_results)
-    import code
-    code.interact(local=locals())
-
-
     '''
     target = sys.argv[1]
     print(target)

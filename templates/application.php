@@ -20,11 +20,17 @@ include('/var/www/html/lib/{{ phplib }}.php');
   <!-- input array div -->
   <div class="row">
     <form id="form" action"<?php echo(base_url() . "/applications/{{ appname }}"); ?>" method="POST">
+    {% for param in params %}
+      { param.tohtml() }
+    {% endfor %}
     </form>
   </div>
 
   <!-- results array div -->
   <div class="row-fluid">
+    {% for input in inputs %}
+      { result.tohtml() }
+    {% endfor %}
   </div>
 
 </div>
