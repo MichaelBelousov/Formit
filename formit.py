@@ -27,118 +27,65 @@ types:
     datetime
     time
     email
-    URL
+    url
     table|key1,key2,key3
-        datetime|format -> datetime|%Y-%M-%D:%h-%m-%s
-        date|format
-        time|format
-        re|format -> re|/expr/
+    datetime|format -> datetime|%Y-%M-%D:%h-%m-%s
+    date|format
+    time|format
+    re|format -> re|/expr/
+    none
 
-NAMES?:
-    - formit
-    - d2h?
+directives:
+    !group GROUPNAME
+    !noalert
 
 """
 
 # TODO: use the | syntax to delimit multiple type entries? Or have it so multiple python functions can point to the same input, with different input types!
 
 import sys
+import os
+from os import path
 from secappsutils import validatorsplus as validators
-from pyparsing import *  #use psyco for performance?
-from functools import reduce
-from operator import or_
+import inspect
+from jinja2plus import render
 # import argparse
 
-ParserElement.inlineLiteralsUsing(Suppress)
-#special literals
-MARK = '@'
-DMARK = '!'
-SPACE = Suppress(White())
+template_path = path.join(os.curdir, 'templates/')
 
-def raise_invalid_type():
-    raise SyntaxError('Invalid Input Type')
+def make_app(name="My App", 
+        slug='my_app', 
+        approot=os.curdir,
+        template_path=template_path):
+    """a decorator that turns a class into an app"""
 
-typevalidators = {'str' : lambda t: True,   # should actually use printable character checking
-            'ipv4' : validators.ipv4,
-            'cidr' : validators.cidr,
-            'ipv6' : validators.ipv6,
-            'mac' : validators.mac_address,
-            'num' : validators.number}
-typevalidators.setdefault(raise_invalid_type)
+    if not os.path.isdir(approot):
+        raise FileNotFoundError('app root does not '
+                'exist')
 
-pname = Combine(Word(alphanums) + Optional(Word(alphanums+'_-')))
-pnumber = Combine(Word(nums) + Optional('.' + Word(nums)))
-pcomment = '#' + restOfLine()
+    appdir = path.join(approot, slug)
+    os.mkdir(appdir)
 
-ptype = reduce(or_, [CaselessKeyword(x) for x in 
-    ('str', 'ipv4', 'cidr', 'mac', 'num', 'table', 'datetime', 'email')])
-# ptype = NoMatch() | 'str' | 'ipv4' | 'cidr' |\
-                    # 'mac' | 'num' | 'table' |\
-                    # 'datetime' | 'email'
+    def decorator(cls):
+        funcs = [f for f in dir(cls) if f not in excludes 
+                and callable(getattr(cls, f))]
+        # determine form inputs
 
-pregexformat = Combine('/' + Word(printables) + '/')
+        for func in funcs:
+            source = func.__doc__
+            for directive in pdirective.scanString(source):
+                print(directive)
+            for param in pparam.scanString(source):
+                print(param)
+            for result in presult.scanString(source):
+                print(result)
+        # determine 
 
-ptableformat = Group(delimitedList(pname))
-pdatetimeformat = Combine(
-    OneOrMore(
-        Word(alphanums+'%-_:./'),
-        stopOn=']'),
-    adjacent=False,
-    joinString=' '
-    )
+        # didn't touch it, so return it
+        return cls
 
-pformat = ptableformat | pdatetimeformat
-
-ptypedef = (
-        '[' 
-        + ptype                     ('type')
-        + Optional(
-            '|' 
-            + pformat,
-            default='')             ('format')
-        + ']'
-)
-
-pdirective = pname
-pdirectiveargs = delimitedList(Word(alphanums))
-
-pparam = (
-        MARK 
-        + Keyword('param')          ('specifier')
-        + Optional(
-            ptypedef                ('type'),
-            default='str'
-            )
-        + SPACE 
-        + pname                     ('name')
-)
-
-presult = (
-        MARK 
-        + Keyword('result')         ('specifier')
-        + ptypedef                  ('type')
-        + Optional(
-            SPACE 
-            + pname,
-            default='result'
-            )                       ('name')
-)
-
-pdirective = (
-        DMARK 
-        + pdirective                ('specifier')
-        + Optional(pdirectiveargs)  ('args')
-)
-
-pline = pparam | presult | pdirective
-pline.ignore(pcomment)
-
-
-########## end parsing stuff #############
-
-# NOTE: seems more convenient, but didn't work very well
-# pdocstr = delimitedList(Optional(pline), Suppress(lineEnd))
-# pdocstr.setParseAction(FormSpec)
+    return decorator
+    
 
 def make_app(cls):
     """a decorator that turns a class into an app"""
@@ -155,13 +102,11 @@ def make_app(cls):
     excludes = ('__class__',)
     for e in excludes:
         funcs.remove(e)
-    for name in funcs:
-        func = getattr(ClassWrapper, name)
-        print(func.__doc__)
+    for fname in funcs:
+        func = getattr(ClassWrapper, fname)
         def decorated(*args, **kwargs):
-            print('hello')
             return func(*args, **kwargs)
-        setattr(ClassWrapper, name, decorated)
+        setattr(ClassWrapper, fname, decorated)
 
     # @wraps might not necessarily work so...
     ClassWrapper.__doc__ = cls.__doc__
@@ -172,47 +117,3 @@ def make_app(cls):
 def make_named_app(name):
     # do something
     return make_app
-
-def example(title, root):
-    """
-    # example
-    !noalert
-    @param[str] title
-    @param[ipv4] root
-    @result[table|key1, key2, key3]
-
-    this function is an example for the form declaration syntax
-    """
-    pass
-
-def get_formspec(obj):
-    """returns form specification of the function object"""
-    source = obj.__doc__
-
-    directives = [t[0] for t in pdirective.scanString(source)]
-    params = [t[0] for t in pparam.scanString(source)]
-    results = [t[0] for t in presult.scanString(source)]
-    form = FormSpec(params, results, **{k[0]:(k[1] if len(k)>1 else None) for k in directives})
-    return form
-
-
-if __name__ == '__main__':
-    '''
-    target = sys.argv[1]
-    print(target)
-    contents = None
-    with open(target) as fd:
-        contents = fd.read()
-    module = ast.parse(contents)
-    moddoc = ast.get_docstring(module)
-
-    funcs = [n for n in module.body if isinstance(n, ast.FunctionDef)]
-    classdefs = [n for n in module.body if isinstance(n, ast.ClassDef)]
-    for classdef in classdefs:
-        methods = [f for f in classdef.body 
-                if isinstance(n, ast.FunctionDef)]
-        for method in methods:
-            docstr = ast.get_docstring(method)
-            getspec()
-    '''
-

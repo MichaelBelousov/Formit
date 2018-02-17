@@ -10,10 +10,6 @@ defaultalert = {
         'always_error' : False
         }
 
-class InputType:
-    def __init__(self, name, format_=None, validator=lambda t: True):
-        pass
-
 class Form:
     """Form data, assembled from the given class"""
 
@@ -31,6 +27,9 @@ class Form:
         # let's use jinja here?
         # render(templatepath)
         return str()
+
+    def addInput(formelem, group=None):
+        pass
 
 
 class FormElem:
@@ -56,13 +55,20 @@ class FormElem:
 
 class FormParam(FormElem):
     """base class for all params"""
-
     def __init__(types={}, alert=defaultalert, settings=tuple()
             *args, **kwargs): 
         super().__init__(*args, **kwargs)
         self.types = types  # mapping to formats
         self.alert = alert
         self.settings = settings
+
+class MultiFormParam(FormParam):
+    def __init__(self, *args):
+        if not any(
+                map(lambda t: isinstance(t, FormParam), 
+                    args)):
+            raise TypeError('MultiFormParam takes only '
+                    ' FormParam subclasses as arguments')
 
 
 class SearchParam(FormParam):
