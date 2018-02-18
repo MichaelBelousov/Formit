@@ -2,6 +2,9 @@
 # TODO: use jinja2
 
 from textwrap import dedent
+from grammar import pstatement, commands
+import jinja2
+from datetime import datetime
 
 defaultalert = {
         'hidden' : False,
@@ -10,35 +13,75 @@ defaultalert = {
         'always_error' : False
         }
 
-class Form:
-    """Form data, assembled from the given class"""
+class FormApp(dict):
+    """
+    HTML form-based app assembled from an annotated class
+    """
 
-    def __init__(self):
-        inputs = []
-        results = []
-        scriptblocks = set()  # XXX: oset?
-        # move this to some hueristic prettifier algorithm?
-        if sum(map(lambda t: isinstance(t, buttonparam), inputs)) > 3:
-            # add an all and a none button?
-            pass
+    def __init__(self, cls, name, baseurl, root, template):
+        """
+        cls: the annotated class
+        path: the application target directory
+        template: the path to the template directory
+        """
+        self.root = root
+        self.template = template
+        self.indexfilename = 'index.php'
+        self.params = {}
+        self.results = {}
+        self['appname'] = name
+        self['phplib'] = self.path
+        self['jssettings'] = {'base_url': baseurl}
 
-    def tohtml(self):
-        # templates.render()
-        # let's use jinja here?
-        # render(templatepath)
-        return str()
+        funcs = [f for f in dir(cls)
+                if callable(getattr(cls, f))]
 
-    def addInput(formelem, group=None):
-        pass
+        for func in funcs:
+            data = pstatement.parseString(ln)
+            if data:
+                cmd = data[0]
+                args = data[1:]
+                commands[cmd](self, args)
+        super().__init__()
 
+    def _get_uniq_id(self, prefix='id'):
+        filt = (i for i in self.params + self.results
+                if i.name.startswith(prefix))
+        m = max(filt, key=lambda t: int(t.partition(prefix)[2]))
+        return '{prefix}{num}'.format(prefix=prefix, num=m+1)
+
+    def __getitem__(self, key):
+        if key == 'params':
+            return [i.render() for i in self.params]
+        elif key == 'results':
+            return [i.render() for i in self.results]
+        else:
+            return super().__getitem__(key)
+
+    def render(self):
+        """renders the form"""
+        # render index page
+        dest = os.path.join(self.root, self.indexfilename)
+        context = self
+        context['gentime'] = datetime.now()
+
+        templatepath, templatefname = os.path.split(self.template)
+        res = jinja2.Environment(
+                loader=jinja2.FileSystemLoader(templatepath)
+                ).get_template(templatefname).render(context)
+        with open(dest, 'w') as f:
+            f.write(res)
+
+        # render script page
 
 class FormElem:
 
-    def __init__(self, label=None, attachpoint='form', 
+    def __init__(self, parent, label=None, attachpoint='form', 
             template=''):
         self.label = label
         self.attachpoint = 'form'
         self.template = ''
+        self.id = None
 
     def tohtml(self, **kwargs):
         """generate the html for this form element"""
@@ -52,6 +95,11 @@ class FormElem:
 
     def __str__(self):
         return self.template  #.format(**dir(self))?
+
+    def getid(self):
+        if self.id is None:
+            self.id = parent._get_uniq_id()
+        return self.id
 
 class FormParam(FormElem):
     """base class for all params"""
@@ -121,23 +169,13 @@ class StrButtonParam(Formparam):
 class FormResult(FormElem):
     """base class for all results"""
 
-    def __init__(type_={}, *args, **kwargs): 
+    def __init__(self, type_={}, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.type = type_  # mapping to formats
 
 class TableResult(FormResult):
     """table format result"""
-    def __init__(self, 
-
-
-inputvalidators = {
-    'num' :
-"""\
-function isNum(n) {
-    return !isNaN(n);
-}
-""",
-
-}
+    def __init__(self):
+        pass
 
 

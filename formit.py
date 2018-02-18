@@ -46,18 +46,22 @@ directives:
 import sys
 import os
 from os import path
+from socket import gethostname
 from secappsutils import validatorsplus as validators
 import inspect
-from jinja2plus import render
+import jinja2plus as jinjaplus
+from compose import FormApp
 # import argparse
 
-template_path = path.join(os.curdir, 'templates/')
+templatepath = path.join(os.curdir, 'templates/')
+
+baseurl = gethostname()
 
 def make_app(name="My App", 
         slug='my_app', 
         approot=os.curdir,
-        template_path=template_path):
-    """a decorator that turns a class into an app"""
+        templatepath=templatepath):
+    """a decorator that turns a class into a form app"""
 
     if not os.path.isdir(approot):
         raise FileNotFoundError('app root does not '
@@ -66,54 +70,16 @@ def make_app(name="My App",
     appdir = path.join(approot, slug)
     os.mkdir(appdir)
 
-    def decorator(cls):
-        funcs = [f for f in dir(cls) if f not in excludes 
-                and callable(getattr(cls, f))]
-        # determine form inputs
-
-        for func in funcs:
-            source = func.__doc__
-            for directive in pdirective.scanString(source):
-                print(directive)
-            for param in pparam.scanString(source):
-                print(param)
-            for result in presult.scanString(source):
-                print(result)
-        # determine 
-
-        # didn't touch it, so return it
+    def decorator(cls, 
+            name=name,
+            baseurl=baseurl,
+            slug=slug, 
+            appdir=appdir, 
+            template=templatepath):
+        """class decorator, that generates the app frontend"""
+        form = FormApp(cls, name, baseurl, appdir, templatepath)
+        form.render()
         return cls
 
     return decorator
     
-
-def make_app(cls):
-    """a decorator that turns a class into an app"""
-
-    if not isinstance(cls, type):
-        raise TypeError('Only classes can be'
-                ' made into apps.')
-
-    # soon-to-be decorated wrapper class
-    class ClassWrapper(cls):
-        othercls = cls
-    # decoration is clearer, here
-    funcs = [f for f in dir(ClassWrapper) if callable(getattr(ClassWrapper, f))]
-    excludes = ('__class__',)
-    for e in excludes:
-        funcs.remove(e)
-    for fname in funcs:
-        func = getattr(ClassWrapper, fname)
-        def decorated(*args, **kwargs):
-            return func(*args, **kwargs)
-        setattr(ClassWrapper, fname, decorated)
-
-    # @wraps might not necessarily work so...
-    ClassWrapper.__doc__ = cls.__doc__
-    ClassWrapper.__name__ = cls.__name__
-
-    return ClassWrapper
-
-def make_named_app(name):
-    # do something
-    return make_app

@@ -22,7 +22,7 @@ typevalidators = {'str' : lambda t: True,   # should actually use printable char
             'cidr' : validators.cidr,
             'ipv6' : validators.ipv6,
             'mac' : validators.mac_address,
-            'num' : validators.number}
+            'num' : 
 typevalidators.setdefault(raise_invalid_type)
 '''
 
@@ -66,7 +66,7 @@ pparam = (
         + Keyword('param')          ('specifier')
         + Optional(
             ptypedef                ('type'),
-            default='str'
+            str'
             )
         + SPACE 
         + pname                     ('name')
@@ -106,19 +106,35 @@ pstatement.ignore(pythonStyleComment)
 # )
 # pdocstr = delimitedList(Group(pstatement), lineEnd)
 
+
 ########## End Parser #############
 
-def param(parsed):
-    print(parsed)
+from compose import Form
 
-def result(parsed):
-    print(parsed)
+def param(form, parsed):
+    """function for parsing param statements"""
+    assert isinstance(form, Form), 'form arg must be Form instance'
 
-def group(parsed):
-    print(parsed)
+    paramname = parsed['name']
+    if paramname in form.inputs:
+        form.inputs[parsed] = 
+    form.inputs[parsed['name']] = 
+    print('param', parsed)
 
-def noalert(parsed):
-    print(parsed)
+def result(form, parsed):
+    """function for parsing result statements"""
+    assert isinstance(form, Form), 'form arg must be Form instance'
+    print('result', parsed)
+
+def group(form, parsed):
+    """function for parsing group directives"""
+    assert isinstance(form, Form), 'form arg must be Form instance'
+    print('group', parsed)
+
+def noalert(form, parsed):
+    """function for parsing noalert directives"""
+    assert isinstance(form, Form), 'form arg must be Form instance'
+    print('noalert', parsed)
 
 commands = {
         'param'     : param,
@@ -126,21 +142,5 @@ commands = {
         'group'     : group,
         'noalert'   : noalert
         }
-
-########## End Commands#############
-
-from compose import Form
-
-def parse_docstr(obj):
-    form = Form()
-    source = obj.__doc__
-    lines = source.split('\n')
-
-    for ln in lines:
-        data = pstatement.parseString(ln)
-        if data:
-            command = data[0]
-            args = data[1:]
-            form = commands[command](args)
 
 

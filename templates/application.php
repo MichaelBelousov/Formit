@@ -3,7 +3,7 @@ include('/var/www/html/templates/head.php');
 include('/var/www/html/lib/{{ phplib }}.php');
 
 /* This template was generated using formit and jinja2
- * at {{ gentime }}, on {{ blah }}
+ * at {{ gentime }}
  */
 ?>
 
