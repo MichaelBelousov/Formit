@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 """
-A script for converting marked-up python backends to an HTML and php frontend.
-
 syntax:
 
     '''
@@ -41,8 +39,6 @@ directives:
 
 """
 
-# TODO: use the | syntax to delimit multiple type entries? Or have it so multiple python functions can point to the same input, with different input types!
-
 import sys
 import os
 from os import path
@@ -58,7 +54,7 @@ templatepath = path.join(os.curdir, 'templates/')
 baseurl = gethostname()
 
 def make_app(name="My App", 
-        slug='my_app', 
+        slug=None, 
         approot=os.curdir,
         templatepath=templatepath):
     """a decorator that turns a class into a form app"""
@@ -66,6 +62,11 @@ def make_app(name="My App",
     if not os.path.isdir(approot):
         raise FileNotFoundError('app root does not '
                 'exist')
+
+    if slug is None:
+        slug = name
+        for spacechar in (' ', '\t', '\n'):
+            slug = slug.replace(spacechar, '_')
 
     appdir = path.join(approot, slug)
     os.mkdir(appdir)
