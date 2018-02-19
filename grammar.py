@@ -12,6 +12,7 @@ lineBegin = Regex(r'^\s*')
 MARK = '@'
 DMARK = '!'
 SPACE = Suppress(White())
+SPACE = Suppress(Word('\t '))
 
 def raise_invalid_type():
     raise SyntaxError('Invalid Input Type')
@@ -68,7 +69,7 @@ pparam = (
             ptypedef                ('type'),
             default='str'
             )
-        + SPACE 
+        # + SPACE 
         + pname                     ('name')
 )  #.setResultsName('param')
 
@@ -77,8 +78,7 @@ presult = (
         + Keyword('result')         ('command')
         + ptypedef                  ('type')
         + Optional(
-            SPACE 
-            + pname,
+            pname,
             default='result'
             )                       ('name')
 )  #.setResultsName('result')
@@ -114,9 +114,8 @@ pdocstr = ZeroOrMore(
 # pdocstr = delimitedList(Group(pstatement), lineEnd)
 
 
-########## End Parser #############
+########## Commands #############
 
-from compose import Form
 
 def param(form, parsed):
     """function for parsing param statements"""
