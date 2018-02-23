@@ -55,7 +55,8 @@ in the design of your backend, and a decorator.
 
 The PHP AJAX endpoints, PHP/HTML form, clientside validation code for form input, and etc are all generated using jinja2.
 
+
 ## Future
 
-Add support for parsing straight from text, to support other languages?
-
+* Add support for parsing straight from text, to support other languages?
+* Integrate whole heartedly with Sphinx? That means using the reStructuredText markup language 
