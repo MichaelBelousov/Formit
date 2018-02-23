@@ -12,6 +12,7 @@ lineBegin = Regex(r'^\s*')
 MARK = '@'
 DMARK = '!'
 SPACE = Suppress(White())
+SPACE = Suppress(Word('\t '))
 
 def raise_invalid_type():
     raise SyntaxError('Invalid Input Type')
@@ -63,33 +64,32 @@ pdirectiveargs = delimitedList(Word(alphanums))
 
 pparam = (
         MARK 
-        + Keyword('param')          ('specifier')
+        + Keyword('param')          ('command')
         + Optional(
             ptypedef                ('type'),
-            str'
+            default='str'
             )
-        + SPACE 
+        # + SPACE 
         + pname                     ('name')
 )  #.setResultsName('param')
 
 presult = (
         MARK 
-        + Keyword('result')         ('specifier')
+        + Keyword('result')         ('command')
         + ptypedef                  ('type')
         + Optional(
-            SPACE 
-            + pname,
+            pname,
             default='result'
             )                       ('name')
 )  #.setResultsName('result')
 
 pdirective = (
         DMARK 
-        + pdirective                ('specifier')
+        + pdirective                ('command')
         + Optional(pdirectiveargs)  ('args')
 )  #.setResultsName('directive')
 
-pstatement= (
+pstatement = (
         (pdirective | pparam | presult)
         + Suppress(restOfLine)
         # + lineEnd
@@ -98,7 +98,14 @@ pstatement= (
 
 pstatement.ignore(pythonStyleComment)
 
-# TODO: use this
+
+pdocstr = ZeroOrMore( 
+        ( Group(pstatement) 
+            | Suppress(CharsNotIn('\n')) 
+            | Empty()) 
+        + Suppress(OneOrMore(lineEnd))
+)
+
 # pdocstr = ZeroOrMore(
         # (Group(pstatement) | restOfLine)
         # + (lineEnd | stringEnd),
@@ -107,9 +114,8 @@ pstatement.ignore(pythonStyleComment)
 # pdocstr = delimitedList(Group(pstatement), lineEnd)
 
 
-########## End Parser #############
+########## Commands #############
 
-from compose import Form
 
 def param(form, parsed):
     """function for parsing param statements"""
@@ -117,8 +123,9 @@ def param(form, parsed):
 
     paramname = parsed['name']
     if paramname in form.inputs:
-        form.inputs[parsed] = 
-    form.inputs[parsed['name']] = 
+        inp = form.inputs['paramname']
+        form.inputs['paramname'] = MultiTypeParam(inp)
+    # form.inputs[parsed['name']] = 
     print('param', parsed)
 
 def result(form, parsed):
