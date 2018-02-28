@@ -18,13 +18,13 @@ class FormApp(dict):
     HTML form-based app assembled from an annotated class
     """
 
-    def __init__(self, cls, name, baseurl, root, template):
+    def __init__(self, cls, name, slug, config):
         """
         cls: the annotated class
         path: the application target directory
         template: the path to the template directory
         """
-        self.root = root
+        self.root = os.path.join(config['appsroot'], slug)
         self.template = template
         self.indexfilename = 'index.php'
         self.params = {}

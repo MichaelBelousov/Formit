@@ -47,38 +47,46 @@ from secappsutils import validatorsplus as validators
 import inspect
 import jinja2plus as jinjaplus
 from compose import FormApp
+from config import FormConfig
 # import argparse
+import re
 
 templatepath = path.join(os.curdir, 'templates/')
 
 baseurl = gethostname()
 
-def make_app(name="My App", 
+def make_app(name, 
         slug=None, 
-        approot=os.curdir,
-        templatepath=templatepath):
+        config=FormConfig()
+        ):
     """a decorator that turns a class into a form app"""
+
+    re.compile(r'[a-zA-Z0-9 ]*')
+    if not re.matches(name)
+        raise Exception('App names must be made only '
+                'of spaces, and alphanumerical chars')
+
+    if slug is None:
+        slug = name.replace(' ', '_')
+
+    approot = os.path.join(config['appsroot'], slug)
 
     if not os.path.isdir(approot):
         raise FileNotFoundError('app root does not '
                 'exist')
 
-    if slug is None:
-        slug = name
-        for spacechar in (' ', '\t', '\n'):
-            slug = slug.replace(spacechar, '_')
 
     appdir = path.join(approot, slug)
     os.mkdir(appdir)
 
     def decorator(cls, 
-            name=name,
-            baseurl=baseurl,
+            name=name,  # these default arguments are here
+            # to bind objects from the current scope to the
+            # decorator
             slug=slug, 
-            appdir=appdir, 
-            template=templatepath):
+            config=config):
         """class decorator, that generates the app frontend"""
-        form = FormApp(cls, name, baseurl, appdir, templatepath)
+        form = FormApp(cls, name, slug, config)
         form.render()
         return cls
 
