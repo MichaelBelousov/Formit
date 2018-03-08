@@ -18,7 +18,10 @@ server_root/
             app_slug1_ajax_endpoint1.php
         
 """
+
 from configparser import ConfigParser
+from inputtypes import *
+# import outputtypes as outtypes
 
 class FormConfig(dict):
     """
@@ -36,7 +39,10 @@ class FormConfig(dict):
             templatespath = os.path.join(serverroot, 'templates/'),
             phplibpath = None,
             **kwargs):
+        """init FormConfig"""
         self.update(kwargs)
+        self.intypes = [STR, ENUM, NUM, CIDR, IPV4, MAC, DATETIME]
+        self.outtypes = []
         self['appsroot'] = appsroot
         self['serverroot'] = serverroot
         self['jspath'] = jspath

@@ -83,11 +83,22 @@ class FormElem:
         self.template = ''
         self.id = None
 
-    def tohtml(self, **kwargs):
+    def makehtml(self, **kwargs):
         """generate the html for this form element"""
         kwargs.update(dir(self))  
         return self.template.format(**kwargs)
-        # my text editor shuns the double unpack
+        # return self.template.format(**kwargs, **dir(self))
+
+    def makejs(self, **kwargs):
+        """generate the js for this form element"""
+        kwargs.update(dir(self))  
+        return self.template.format(**kwargs)
+        # return self.template.format(**kwargs, **dir(self))
+
+    def makecss(self, **kwargs):
+        """generate the css for this form element"""
+        kwargs.update(dir(self))  
+        return self.template.format(**kwargs)
         # return self.template.format(**kwargs, **dir(self))
 
     def __format__(self, *args, **kwargs):
@@ -168,7 +179,6 @@ class StrButtonParam(Formparam):
 
 class FormResult(FormElem):
     """base class for all results"""
-
     def __init__(self, type_={}, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.type = type_  # mapping to formats

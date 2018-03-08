@@ -1,18 +1,12 @@
 
+"""
+Input type definitions for formit
+"""
+
 import validatorsplus as validators
 from datetime import datetime
 
 from compose import FormParam
-
-'''
-class FormParam:
-    def __init__(self, name, format_=None, validator=lambda t: True):
-        pass
-    def isvalid(self, s):
-        return self.validator(s)
-    def tohtml(self):
-        pass
-'''
 
 class STR(FormParam):
     def __init__(self):
@@ -20,7 +14,7 @@ class STR(FormParam):
 
 class ENUM(FormParam):
     def __init__(self, format_=tuple()):
-        #use make validator?
+        # use make validator?
         @validators.utils.validator
         def v(s, format_=format_):
             return s in format_
@@ -41,11 +35,6 @@ class IPV4(FormParam):
 class MAC(FormParam):
     def __init__(self):
         super().__init__('mac', None, validators.mac_address)
-
-class TABLE(FormParam):
-    def __init__(self, format_):
-        # by default, table has no valid inputs, since it's meant for output
-        super().__init__('table', format_, lambda t: False)
 
 class DATETIME(FormParam):
     def __init__(self, format_):
